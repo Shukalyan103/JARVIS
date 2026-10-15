@@ -1,0 +1,46 @@
+{
+  "routine_name": "Daily Workspace Routine",
+  "delay_between_apps_seconds": 3,
+  "apps": [
+    {
+      "name": "Visual Studio Code",
+      "voice_announcement": "Opening Visual Studio Code",
+      "type": "executable",
+      "primary_command": "code",
+      "project_path": "c:\\Users\\USD\\Desktop\\study\\projects\\JARVIS",
+      "fallback_paths": [
+        "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe"
+      ]
+    },
+    {
+      "name": "Google Chrome",
+      "voice_announcement": "Opening Google Chrome",
+      "type": "executable",
+      "primary_command": "chrome",
+      "fallback_paths": [
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+      ]
+    },
+    {
+      "name": "Spotify",
+      "voice_announcement": "Opening Spotify",
+      "type": "protocol_or_command",
+      "primary_command": "spotify:",
+      "fallback_paths": [
+        "%LOCALAPPDATA%\\Microsoft\\WindowsApps\\Spotify.exe",
+        "%APPDATA%\\Spotify\\Spotify.exe"
+      ]
+    },
+    {
+      "name": "Discord",
+      "voice_announcement": "Opening Discord",
+      "type": "hybrid",
+      "primary_command": "discord:",
+      "fallback_paths": [
+        "%LOCALAPPDATA%\\Discord\\Update.exe --processStart Discord.exe"
+      ],
+      "web_fallback": "https://discord.com/app"
+    }
+  ]
+}

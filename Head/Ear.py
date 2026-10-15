@@ -1,61 +1,68 @@
-import speech_recognition as sr
 import os
-import threading
-from mtranslate import translate
-from colorama import Fore,Style,init
+import sys
+import speech_recognition as sr
+from colorama import Fore, Style, init
 
-init(autoreset = True) # Automatically reset Style After Each Print
+init(autoreset=True)
 
-def print_loop():
-    while True:
-        print(Fore.LIGHTGREEN_EX + "I am Listning... ", end="", flush=True)
-        print(Style.RESET_ALL,end="",flush=True)
-        print("",end="",flush=True)
+# Shared recognizer instance to preserve ambient noise calibration
+_recognizer = sr.Recognizer()
+_recognizer.dynamic_energy_threshold = True
+_recognizer.pause_threshold = 0.8
+_recognizer.operation_timeout = None
+_calibrated = False
 
-def trans_hindi_to_english(txt):
-    english_txt = translate(txt, to_language="en-in")
-    return english_txt
 
-def listen():
-    recognizer = sr.Recognizer()
-    recognizer.energy_threshold = 300
-    recognizer.dynamic_energy_threshold = False
-    recognizer.dynamic_energy_adjustment_damping = 0.03 # Adjust the damping factor for faster response
-    recognizer.dynamic_energy_ratio = 1.9 # Adjust the ratio for more sensitivity
-    recognizer.pause_threshold = 0.2
-    recognizer.operation_timeout = None
-    recognizer.non_speaking_duration = 0.1
+def calibrate_mic(source):
+    global _calibrated
+    if not _calibrated:
+        print(Fore.CYAN + "🎙️ Calibrating microphone for ambient noise...", end="", flush=True)
+        _recognizer.adjust_for_ambient_noise(source, duration=0.6)
+        _calibrated = True
+        print(Fore.GREEN + " Ready!\n")
 
-    with sr.Microphone() as source: #here we are using mic as source to listen what we say
-        recognizer.adjust_for_ambient_noise(source) #what will speak in mic is not affected by the surrounding noise
-        while True:
-            print(Fore.LIGHTGREEN_EX + "I am Listning... ", end="", flush=True)
+
+def listen(timeout=None, phrase_time_limit=10):
+    """
+    Listens to the microphone and returns recognized speech in lowercase.
+    Returns empty string '' if speech could not be recognized or timed out.
+    """
+    try:
+        with sr.Microphone() as source:
+            calibrate_mic(source)
+            print(Fore.LIGHTGREEN_EX + "🎙️ [JARVIS]: Listening for voice command...", end="", flush=True)
+
+            audio = _recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            print("\r" + Fore.LIGHTYELLOW_EX + "⚡ [JARVIS]: Processing speech...             ", end="", flush=True)
+
             try:
-                audio = recognizer.listen(source, timeout=None) #here source is mic what we say and timeout is how much time it will wait for us to speak
-
-                print("\r" + Fore.LIGHTYELLOW_EX + "Got it , Recognizing... ", end="", flush=True)
-                recognizer_txt = recognizer.recognize_google(audio).lower()
-                if recognizer_txt:
-                    translated_txt = trans_hindi_to_english(recognizer_txt)
-                    print("\r" + Fore.MAGENTA + "you Said: " + translated_txt)
-                    return translated_txt
+                recognized_text = _recognizer.recognize_google(audio).lower().strip()
+                if recognized_text:
+                    print("\r" + Fore.MAGENTA + f"🗣️ [You Said]: \"{recognized_text}\"          ")
+                    return recognized_text
                 else:
-                    return " "
+                    print("\r" + Fore.LIGHTBLACK_EX + "   (No speech detected)                      ")
+                    return ""
             except sr.UnknownValueError:
-                return " "
-            finally:
-                print("\r", end='', flush=True)
+                print("\r" + Fore.LIGHTBLACK_EX + "   (Could not understand audio)              ")
+                return ""
+            except sr.RequestError as e:
+                print("\r" + Fore.RED + f"   (Google Speech recognition error: {e})    ")
+                return ""
 
-    # Clear screen and start status print threads (moved outside the with-block)
-    os.system("cls" if os.name == "nt" else "clear")
-    # threading part
-    listen_thread = threading.Thread(target=print_loop)
-    print_thread = threading.Thread(target=print_loop)
-    listen_thread.start()
-    print_thread.start()
-    listen_thread.join()
-    print_thread.join()
+    except sr.WaitTimeoutError:
+        print("\r" + Fore.LIGHTBLACK_EX + "   (Listening timed out)                     ")
+        return ""
+    except Exception as e:
+        print("\r" + Fore.RED + f"   (Microphone error: {e})                   ")
+        return ""
 
-while True:
-    listen()
-             
+
+if __name__ == "__main__":
+    print(Fore.CYAN + "=== Testing JARVIS Ear ===")
+    while True:
+        text = listen()
+        if text:
+            print(f"Result: {text}")
+        if text in ["exit", "quit", "stop"]:
+            break

@@ -1,0 +1,13 @@
+speechrecognition
+pyaudio
+edge-tts
+pygame
+python-dotenv
+google-genai
+colorama
+psutil
+langdetect
+translate
+openai
+opencv-python
+pillow
